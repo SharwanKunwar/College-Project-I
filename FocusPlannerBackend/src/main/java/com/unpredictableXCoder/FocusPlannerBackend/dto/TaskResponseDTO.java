@@ -18,6 +18,7 @@ public class TaskResponseDTO
     private Long id;
     private String title;
     private String description;
+    private String taskNote;
     private Priority priority;
     private Status status;
     private ForWhen forWhen;

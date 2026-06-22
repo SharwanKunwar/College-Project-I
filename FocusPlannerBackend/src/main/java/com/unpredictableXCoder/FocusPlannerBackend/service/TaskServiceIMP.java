@@ -4,10 +4,12 @@ import com.unpredictableXCoder.FocusPlannerBackend.dto.TaskRequestDTO;
 import com.unpredictableXCoder.FocusPlannerBackend.dto.TaskResponseDTO;
 import com.unpredictableXCoder.FocusPlannerBackend.entity.TaskEntity;
 import com.unpredictableXCoder.FocusPlannerBackend.enums.ForWhen;
+import com.unpredictableXCoder.FocusPlannerBackend.enums.Status;
 import com.unpredictableXCoder.FocusPlannerBackend.mapper.TaskMapper;
 import com.unpredictableXCoder.FocusPlannerBackend.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -17,6 +19,7 @@ public class TaskServiceIMP implements TaskServiceHelper{
     private final TaskRepository repository;
     private final TaskMapper mapper;
 
+
     @Override
     public TaskResponseDTO createTask(TaskRequestDTO request) {
         TaskEntity task = mapper.mapToEntity(request);
@@ -24,36 +27,72 @@ public class TaskServiceIMP implements TaskServiceHelper{
         return mapper.mapToResponse(savedTask);
     }
 
-    //Todo: implement belows methods before 10:00 PM
-    //NOTE: I'm at the service layer
 
     @Override
-    public List<TaskResponseDTO> getAllTasks() {
-        return List.of();
+    public List<TaskResponseDTO> getAllTasks()
+    {
+        List<TaskEntity> tasks = repository.findAll();
+        return tasks.stream().map(mapper::mapToResponse).toList();
     }
 
-    @Override
-    public List<TaskResponseDTO> getAllTasksByForWhen(ForWhen forWhen) {
-        return List.of();
-    }
 
     @Override
-    public TaskResponseDTO getTaskById(Long id) {
-        return null;
+    public List<TaskResponseDTO> getAllTasksByForWhen(ForWhen forWhen)
+    {
+        List<TaskEntity> tasksByForWhen = repository.findTaskByForWhen(forWhen);
+        return tasksByForWhen.stream().map(mapper::mapToResponse).toList();
     }
 
-    @Override
-    public TaskResponseDTO startTask(Long id) {
-        return null;
-    }
 
     @Override
-    public TaskResponseDTO completeTask(Long id) {
-        return null;
+    public TaskResponseDTO getTaskById(Long id)
+    {
+        TaskEntity task = repository.findById(id).orElseThrow(()-> new RuntimeException("Task with id " + id + " not found"));
+        return mapper.mapToResponse(task);
     }
 
+
     @Override
-    public void deleteTaskById(Long id) {
+    public TaskResponseDTO startTask(Long id)
+    {
+        TaskEntity task = repository.findById(id).orElseThrow(()-> new RuntimeException("Task with id " + id + " not found"));
+
+        if (task.getStatus() == Status.COMPLETED) {
+            throw new IllegalStateException("Completed tasks cannot be started.");
+        }
+
+        task.setStatus(Status.IN_PROGRESS);
+        task.setStartedAt(LocalDateTime.now());
+
+        return mapper.mapToResponse(repository.save(task));
+    }
+
+
+    @Override
+    public TaskResponseDTO completeTask(Long id)
+    {
+        TaskEntity task = repository.findById(id).orElseThrow(()-> new RuntimeException("Task with id " + id + " not found"));
+
+        if (task.getStatus() == Status.COMPLETED) {
+            throw new IllegalStateException("Task is already completed.");
+        }
+
+        task.setStatus(Status.COMPLETED);
+        task.setFinishedAt(LocalDateTime.now());
+
+        if (task.getTaskNote() != null) {
+            task.setTaskNote(task.getTaskNote().replace("\n", "").replace("\r", ""));
+        }
+
+        return mapper.mapToResponse(repository.save(task));
+    }
+
+
+    @Override
+    public void deleteTaskById(Long id)
+    {
+        TaskEntity task = repository.findById(id).orElseThrow(()-> new RuntimeException("Task with id " + id + " not found"));
+        repository.delete(task);
 
     }
 }

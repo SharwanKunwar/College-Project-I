@@ -27,6 +27,9 @@ public class TaskEntity {
     @Column(nullable = false, length = 300)
     private String description;
 
+    @Column(updatable = false, length = 1000)
+    private String taskNote;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Priority priority;
@@ -45,5 +48,10 @@ public class TaskEntity {
     private LocalDateTime startedAt;
     private LocalDateTime finishedAt;
 
+    //This method will automatically set the createAT timestamp
+    @PrePersist
+    public void prePersist() {
+        createdAt = LocalDateTime.now();
+    }
 
 }
