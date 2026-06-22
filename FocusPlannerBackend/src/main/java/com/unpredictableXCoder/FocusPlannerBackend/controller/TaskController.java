@@ -35,7 +35,7 @@ public class TaskController {
     public ResponseEntity<TaskResponseDTO> getTaskById(@PathVariable Long id) {
         return ResponseEntity.ok(taskService.getTaskById(id));
     }
-    
+
 
     //Todo: add further end points before 10:00 PM
     // add Task is add
