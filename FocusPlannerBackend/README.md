@@ -125,14 +125,14 @@ com.focusplanner
 ├── controller
 │   └── TaskController.java
 ├── service
-│   ├── TaskService.java
-│   └── impl
-│       └── TaskServiceImpl.java
+│   ├── TaskServiceHelper.java
+│   └── TaskServiceImpl.java
 ├── repository
 │   └── TaskRepository.java
 ├── entity
 │   └── TaskEntity.java
 ├── dto
+    ├── ApiErrorResponse.java
 │   ├── TaskRequestDTO.java
 │   └── TaskResponseDTO.java
 ├── mapper
@@ -153,7 +153,7 @@ com.focusplanner
 
 ### 5.1 Entity Layer — `TaskEntity`
 
-The Entity layer represents the persistent data model, mapped directly to the `demo_task` table in PostgreSQL using JPA annotations.
+The Entity layer represents the persistent data model, mapped directly to the `task_table` table in PostgreSQL using JPA annotations.
 
 **Key fields:**
 
@@ -163,7 +163,8 @@ The Entity layer represents the persistent data model, mapped directly to the `d
 | `title` | `String` | Task title, mandatory |
 | `description` | `String` | Optional task details |
 | `priority` | `Priority` (enum) | LOW / MEDIUM / HIGH, stored as STRING |
-| `status` | `TaskStatus` (enum) | PENDING / IN_PROGRESS / FINISHED, stored as STRING |
+| `status` | `Status` (enum) | PENDING / IN_PROGRESS / FINISHED, stored as STRING |
+| `taskNote` | `String` | taskNote | task is saved when task completed |
 | `forWhen` | `ForWhen` (enum) | TODAY / TOMORROW, stored as STRING |
 | `createdAt` | `LocalDateTime` | Auto-populated on creation |
 | `startedAt` | `LocalDateTime` | Populated when task moves to IN_PROGRESS |
@@ -173,7 +174,7 @@ The Entity layer represents the persistent data model, mapped directly to the `d
 
 ```java
 @Entity
-@Table(name = "demo_task")
+@Table(name = "task_table")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -181,15 +182,18 @@ The Entity layer represents the persistent data model, mapped directly to the `d
 @Builder
 public class TaskEntity {
 
-    @Id
+     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, length = 100)
-    private String title;
+    private  String title;
 
-    @Column(length = 500)
+    @Column(nullable = false, length = 300)
     private String description;
+
+    @Column(updatable = false, length = 1000)
+    private String taskNote;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -197,15 +201,23 @@ public class TaskEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TaskStatus status;
+    private Status status;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "for_when", nullable = false)
+    @Column(nullable = false)
     private ForWhen forWhen;
 
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
     private LocalDateTime startedAt;
-    private LocalDateTime completedAt;
+    private LocalDateTime finishedAt;
+
+    //This method will automatically set the createAT timestamp
+    @PrePersist
+    public void prePersist() {
+        createdAt = LocalDateTime.now();
+    }
 }
 ```
 
@@ -214,7 +226,7 @@ public class TaskEntity {
 ```java
 public enum Priority { LOW, MEDIUM, HIGH }
 
-public enum TaskStatus { PENDING, IN_PROGRESS, FINISHED }
+public enum Status { PENDING, IN_PROGRESS, FINISHED }
 
 public enum ForWhen { TODAY, TOMORROW }
 ```
@@ -259,12 +271,13 @@ public class TaskResponseDTO {
     private Long id;
     private String title;
     private String description;
+    private String taskNote;
     private Priority priority;
-    private TaskStatus status;
+    private Status status;
     private ForWhen forWhen;
     private LocalDateTime createdAt;
     private LocalDateTime startedAt;
-    private LocalDateTime completedAt;
+    private LocalDateTime finishedAt;
 }
 ```
 
@@ -284,11 +297,11 @@ The Repository layer uses **Spring Data JPA** to abstract away raw SQL/JDBC code
 
 ```java
 public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
-    List<TaskEntity> findByForWhen(ForWhen forWhen);
+    List<TaskEntity> findTaskByForWhen(ForWhen forWhen);
 }
 ```
 
-Spring Data JPA parses the method name `findByForWhen` and automatically generates the equivalent SQL query at runtime — no manual implementation is required.
+Spring Data JPA parses the method name `findTaskByForWhen` and automatically generates the equivalent SQL query at runtime — no manual implementation is required.
 
 ---
 
@@ -297,14 +310,28 @@ Spring Data JPA parses the method name `findByForWhen` and automatically generat
 The Service layer contains all **business logic**, including task lifecycle rules, and acts as the boundary between the Controller and the persistence layer.
 
 ```java
-public interface TaskService {
+public interface TaskServiceHelper 
+{
+    // This method will help to add a new task to the database
     TaskResponseDTO createTask(TaskRequestDTO request);
+
+    // This method will retrieve all tasks from the database
     List<TaskResponseDTO> getAllTasks();
+
+    // This method will retrieve all tasks based on the selected ForWhen category
+    List<TaskResponseDTO> getAllTasksByForWhen(ForWhen forWhen);
+
+    // This method will retrieve a task using its unique ID
     TaskResponseDTO getTaskById(Long id);
-    List<TaskResponseDTO> filterByForWhen(ForWhen forWhen);
+
+    // This method will start a task by updating its status and start time
     TaskResponseDTO startTask(Long id);
+
+    // This method will mark a task as completed, record its completion time and task note if available
     TaskResponseDTO completeTask(Long id);
-    void deleteTask(Long id);
+
+    // This method will delete a task from the database using its ID
+    void deleteTaskById(Long id);
 }
 ```
 
@@ -312,20 +339,25 @@ public interface TaskService {
 
 - A task can only be **started** if its current status is `PENDING`.
 - A task can only be **completed** if its current status is `IN_PROGRESS`.
+- A taskNote can only be **saved** if task status is `completed`.
 - Attempting to fetch, start, complete, or delete a task with a non-existent ID throws a `TaskNotFoundException`.
 - `startedAt` and `completedAt` timestamps are automatically set during the respective lifecycle transitions.
 
 ```java
 @Override
-public TaskResponseDTO startTask(Long id) {
-    TaskEntity task = taskRepository.findById(id)
-            .orElseThrow(() -> new TaskNotFoundException("Task not found with id: " + id));
+    public TaskResponseDTO startTask(Long id)
+    {
+        TaskEntity task = repository.findById(id).orElseThrow(()-> new RuntimeException("Task with id " + id + " not found"));
 
-    task.setStatus(TaskStatus.IN_PROGRESS);
-    task.setStartedAt(LocalDateTime.now());
+        if (task.getStatus() == Status.COMPLETED) {
+            throw new IllegalStateException("Completed tasks cannot be started.");
+        }
 
-    return taskMapper.toResponseDTO(taskRepository.save(task));
-}
+        task.setStatus(Status.IN_PROGRESS);
+        task.setStartedAt(LocalDateTime.now());
+
+        return mapper.mapToResponse(repository.save(task));
+    }
 ```
 
 ---
@@ -336,32 +368,35 @@ The Mapper layer is solely responsible for **converting between Entity and DTO o
 
 ```java
 @Component
-public class TaskMapper {
-
-    public TaskEntity toEntity(TaskRequestDTO dto) {
+public class TaskMapper
+{
+    //ToEntity
+    public TaskEntity mapToEntity(TaskRequestDTO request){
         return TaskEntity.builder()
-                .title(dto.getTitle())
-                .description(dto.getDescription())
-                .priority(dto.getPriority())
-                .forWhen(dto.getForWhen())
-                .status(TaskStatus.PENDING)
+                .title(request.getTitle())
+                .description(request.getDescription())
+                .priority(request.getPriority())
+                .status(request.getStatus())
+                .forWhen(request.getForWhen())
                 .createdAt(LocalDateTime.now())
                 .build();
     }
 
-    public TaskResponseDTO toResponseDTO(TaskEntity entity) {
+    //ToResponse
+    public TaskResponseDTO mapToResponse(TaskEntity task){
         return TaskResponseDTO.builder()
-                .id(entity.getId())
-                .title(entity.getTitle())
-                .description(entity.getDescription())
-                .priority(entity.getPriority())
-                .status(entity.getStatus())
-                .forWhen(entity.getForWhen())
-                .createdAt(entity.getCreatedAt())
-                .startedAt(entity.getStartedAt())
-                .completedAt(entity.getCompletedAt())
+                .id(task.getId())
+                .title(task.getTitle())
+                .description(task.getDescription())
+                .priority(task.getPriority())
+                .status(task.getStatus())
+                .forWhen(task.getForWhen())
+                .createdAt(task.getCreatedAt())
+                .startedAt(task.getStartedAt())
+                .finishedAt(task.getFinishedAt())
                 .build();
     }
+
 }
 ```
 
@@ -375,45 +410,53 @@ The Controller layer exposes REST endpoints, delegates processing to the Service
 
 ```java
 @RestController
-@RequestMapping("/api/tasks")
 @RequiredArgsConstructor
+@RequestMapping("/api/tasks")
 public class TaskController {
 
-    private final TaskService taskService;
+    private final TaskServiceHelper taskService;
 
+    // Create a new task and save it to the database
     @PostMapping
-    public ResponseEntity<TaskResponseDTO> createTask(@Valid @RequestBody TaskRequestDTO request) {
-        return new ResponseEntity<>(taskService.createTask(request), HttpStatus.CREATED);
+    public ResponseEntity<TaskResponseDTO> addTask(@Valid @RequestBody TaskRequestDTO request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(taskService.createTask(request));
     }
 
+    // Retrieve all tasks from the database
     @GetMapping
     public ResponseEntity<List<TaskResponseDTO>> getAllTasks() {
         return ResponseEntity.ok(taskService.getAllTasks());
     }
 
-    @GetMapping("/{id}")
+    // Retrieve tasks filtered by "forWhen" category (e.g., TODAY, TOMORROW, LATER)
+    @GetMapping("/filter/forWhen/{forWhen}")
+    public ResponseEntity<List<TaskResponseDTO>> getTasksByForWhen(@PathVariable ForWhen forWhen) {
+        return ResponseEntity.ok(taskService.getAllTasksByForWhen(forWhen));
+    }
+
+    // Retrieve a single task by its unique ID
+    @GetMapping("/id/{id}")
     public ResponseEntity<TaskResponseDTO> getTaskById(@PathVariable Long id) {
         return ResponseEntity.ok(taskService.getTaskById(id));
     }
 
-    @GetMapping("/filter/forWhen/{forWhen}")
-    public ResponseEntity<List<TaskResponseDTO>> filterByForWhen(@PathVariable ForWhen forWhen) {
-        return ResponseEntity.ok(taskService.filterByForWhen(forWhen));
-    }
-
+    // Mark a task as "in progress" or started
     @PutMapping("/{id}/start")
     public ResponseEntity<TaskResponseDTO> startTask(@PathVariable Long id) {
         return ResponseEntity.ok(taskService.startTask(id));
     }
 
+    // Mark a task as completed
     @PutMapping("/{id}/complete")
     public ResponseEntity<TaskResponseDTO> completeTask(@PathVariable Long id) {
         return ResponseEntity.ok(taskService.completeTask(id));
     }
 
+    // Delete a task permanently by ID
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
-        taskService.deleteTask(id);
+        taskService.deleteTaskById(id);
         return ResponseEntity.noContent().build();
     }
 }
@@ -431,44 +474,50 @@ A centralized exception handling strategy ensures that **all errors across the a
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(TaskNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleTaskNotFound(TaskNotFoundException ex) {
-        ErrorResponse error = ErrorResponse.builder()
-                .status(HttpStatus.NOT_FOUND.value())
-                .error("Not Found")
+    // HANDLE GENERIC EXCEPTION
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApiErrorResponse> handleRuntimeException(RuntimeException ex)
+    {
+
+        ApiErrorResponse error = ApiErrorResponse.builder()
+                .success(false)
                 .message(ex.getMessage())
                 .timestamp(LocalDateTime.now())
                 .build();
-        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(error);
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidation(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors()
-                .forEach(err -> errors.put(err.getField(), err.getDefaultMessage()));
-        return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+    // HANDLE ILLEGAL ARGUMENT
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+
+        ApiErrorResponse error = ApiErrorResponse.builder()
+                .success(false)
+                .message(ex.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(error);
     }
 
+    // FALLBACK (CATCH ALL)
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGeneric(Exception ex) {
-        ErrorResponse error = ErrorResponse.builder()
-                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                .error("Internal Server Error")
-                .message(ex.getMessage())
+    public ResponseEntity<ApiErrorResponse> handleGenericException(Exception ex) {
+
+        ApiErrorResponse error = ApiErrorResponse.builder()
+                .success(false)
+                .message("Something went wrong: " + ex.getMessage())
                 .timestamp(LocalDateTime.now())
                 .build();
-        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-}
-```
 
-`TaskNotFoundException` is a simple custom **runtime exception**:
-
-```java
-public class TaskNotFoundException extends RuntimeException {
-    public TaskNotFoundException(String message) {
-        super(message);
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(error);
     }
 }
 ```
@@ -523,38 +572,50 @@ sequenceDiagram
 
 ## 8. Database Design
 
-### 8.1 Table: `demo_task`
+### 8.1 Table: `task_table`
 
 | Column | Type | Constraints |
 |---|---|---|
 | `id` | `BIGSERIAL` | PRIMARY KEY, AUTO INCREMENT |
 | `title` | `VARCHAR(100)` | NOT NULL |
-| `description` | `VARCHAR(500)` | NULLABLE |
+| `description` | `VARCHAR(300)` | NOT NULL |
+| `task_note` | `VARCHAR(1000)` | NULLABLE, INSERT ONLY (`updatable = false`) |
 | `priority` | `VARCHAR(20)` | NOT NULL, CHECK (`LOW`, `MEDIUM`, `HIGH`) |
 | `status` | `VARCHAR(20)` | NOT NULL, CHECK (`PENDING`, `IN_PROGRESS`, `FINISHED`) |
 | `for_when` | `VARCHAR(20)` | NOT NULL, CHECK (`TODAY`, `TOMORROW`) |
-| `created_at` | `TIMESTAMP` | NOT NULL |
+| `created_at` | `TIMESTAMP` | NOT NULL, AUTO GENERATED (`@PrePersist`), INSERT ONLY |
 | `started_at` | `TIMESTAMP` | NULLABLE |
-| `completed_at` | `TIMESTAMP` | NULLABLE |
+| `finished_at` | `TIMESTAMP` | NULLABLE |
 
 ### 8.2 Entity-Relationship Diagram
 
 ```mermaid
 erDiagram
-    DEMO_TASK {
+    USER {
+        BIGINT id PK
+        VARCHAR username
+        VARCHAR email
+        VARCHAR password
+    }
+
+    TASK_TABLE {
         BIGINT id PK
         VARCHAR title
         VARCHAR description
+        VARCHAR task_note
         VARCHAR priority
         VARCHAR status
         VARCHAR for_when
         TIMESTAMP created_at
         TIMESTAMP started_at
-        TIMESTAMP completed_at
+        TIMESTAMP finished_at
+        BIGINT user_id FK
     }
+
+    USER ||--o{ TASK_TABLE : "has"
 ```
 
-> **Note:** The current version of FocusPlanner is single-entity (`demo_task`); no foreign-key relationships exist yet. The **Future Enhancements** section outlines planned entities (e.g. `users`, `categories`) that would introduce relational links to this table.
+> **Note**: Each task is associated with a single user through the user_id foreign key. This creates a one-to-many (1:N) relationship where one user can have multiple tasks. Future versions may introduce additional entities such as categories and reminders.
 
 ### 8.3 Enum Storage Strategy
 
@@ -617,6 +678,7 @@ ADD CONSTRAINT chk_for_when CHECK (for_when IN ('TODAY', 'TOMORROW'));
   "description": "Finish unit 3 documentation and diagrams",
   "priority": "HIGH",
   "status": "PENDING",
+  "taskNote":null,
   "forWhen": "TODAY",
   "createdAt": "2026-06-22T09:15:00",
   "startedAt": null,
@@ -657,6 +719,7 @@ ADD CONSTRAINT chk_for_when CHECK (for_when IN ('TODAY', 'TOMORROW'));
   "description": "Finish unit 3 documentation and diagrams",
   "priority": "HIGH",
   "status": "PENDING",
+  "taskNote":null,
   "forWhen": "TODAY",
   "createdAt": "2026-06-22T09:15:00"
 }
@@ -686,8 +749,12 @@ Example: `GET /api/tasks/filter/forWhen/TODAY`
   {
     "id": 1,
     "title": "Complete Software Engineering Assignment",
+    "description": "Finish unit 3 documentation and diagrams",
     "forWhen": "TODAY",
-    "status": "PENDING"
+    "status": "PENDING",
+    "priority": "HIGH",
+    "taskNote":null,
+    "createdAt": "2026-06-22T09:15:00"
   }
 ]
 ```
