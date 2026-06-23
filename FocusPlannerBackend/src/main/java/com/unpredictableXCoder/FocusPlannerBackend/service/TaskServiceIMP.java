@@ -1,5 +1,6 @@
 package com.unpredictableXCoder.FocusPlannerBackend.service;
 
+import com.unpredictableXCoder.FocusPlannerBackend.dto.CompleteTaskNoteAdd;
 import com.unpredictableXCoder.FocusPlannerBackend.dto.TaskRequestDTO;
 import com.unpredictableXCoder.FocusPlannerBackend.dto.TaskResponseDTO;
 import com.unpredictableXCoder.FocusPlannerBackend.entity.TaskEntity;
@@ -68,10 +69,12 @@ public class TaskServiceIMP implements TaskServiceHelper{
     }
 
 
+
     @Override
-    public TaskResponseDTO completeTask(Long id)
-    {
-        TaskEntity task = repository.findById(id).orElseThrow(()-> new RuntimeException("Task with id " + id + " not found"));
+    public TaskResponseDTO completeTask(Long id, CompleteTaskNoteAdd taskNote) {
+
+        TaskEntity task = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Task with id " + id + " not found"));
 
         if (task.getStatus() == Status.COMPLETED) {
             throw new IllegalStateException("Task is already completed.");
@@ -80,8 +83,8 @@ public class TaskServiceIMP implements TaskServiceHelper{
         task.setStatus(Status.COMPLETED);
         task.setFinishedAt(LocalDateTime.now());
 
-        if (task.getTaskNote() != null) {
-            task.setTaskNote(task.getTaskNote().replace("\n", "").replace("\r", ""));
+        if (taskNote != null && taskNote.getTaskNote() != null && !taskNote.getTaskNote().isBlank()) {
+            task.setTaskNote(taskNote.getTaskNote().trim());
         }
 
         return mapper.mapToResponse(repository.save(task));

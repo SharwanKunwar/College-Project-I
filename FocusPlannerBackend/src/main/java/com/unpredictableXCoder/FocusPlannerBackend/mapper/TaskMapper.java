@@ -16,9 +16,7 @@ public class TaskMapper
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .priority(request.getPriority())
-                .status(request.getStatus())
                 .forWhen(request.getForWhen())
-                .createdAt(LocalDateTime.now())
                 .build();
     }
 
@@ -28,6 +26,7 @@ public class TaskMapper
                 .id(task.getId())
                 .title(task.getTitle())
                 .description(task.getDescription())
+                .taskNote(task.getTaskNote())
                 .priority(task.getPriority())
                 .status(task.getStatus())
                 .forWhen(task.getForWhen())

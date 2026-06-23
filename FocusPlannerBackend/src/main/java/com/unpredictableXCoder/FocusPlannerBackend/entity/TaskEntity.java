@@ -27,7 +27,7 @@ public class TaskEntity {
     @Column(nullable = false, length = 300)
     private String description;
 
-    @Column(updatable = false, length = 1000)
+    @Column(length = 1000)
     private String taskNote;
 
     @Enumerated(EnumType.STRING)
@@ -52,6 +52,10 @@ public class TaskEntity {
     @PrePersist
     public void prePersist() {
         createdAt = LocalDateTime.now();
+
+        if (status == null) {
+            status = Status.PENDING;
+        }
     }
 
 }

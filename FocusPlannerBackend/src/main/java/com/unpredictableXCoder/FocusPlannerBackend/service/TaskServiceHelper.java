@@ -1,5 +1,6 @@
 package com.unpredictableXCoder.FocusPlannerBackend.service;
 
+import com.unpredictableXCoder.FocusPlannerBackend.dto.CompleteTaskNoteAdd;
 import com.unpredictableXCoder.FocusPlannerBackend.dto.TaskRequestDTO;
 import com.unpredictableXCoder.FocusPlannerBackend.dto.TaskResponseDTO;
 import com.unpredictableXCoder.FocusPlannerBackend.enums.ForWhen;
@@ -24,7 +25,7 @@ public interface TaskServiceHelper {
     TaskResponseDTO startTask(Long id);
 
     // This method will mark a task as completed, record its completion time and task note if available
-    TaskResponseDTO completeTask(Long id);
+    TaskResponseDTO completeTask(Long id, CompleteTaskNoteAdd taskNote);
 
     // This method will delete a task from the database using its ID
     void deleteTaskById(Long id);

@@ -1,5 +1,6 @@
 package com.unpredictableXCoder.FocusPlannerBackend.controller;
 
+import com.unpredictableXCoder.FocusPlannerBackend.dto.CompleteTaskNoteAdd;
 import com.unpredictableXCoder.FocusPlannerBackend.dto.TaskRequestDTO;
 import com.unpredictableXCoder.FocusPlannerBackend.dto.TaskResponseDTO;
 import com.unpredictableXCoder.FocusPlannerBackend.enums.ForWhen;
@@ -50,10 +51,10 @@ public class TaskController {
         return ResponseEntity.ok(taskService.startTask(id));
     }
 
-    // Mark a task as completed
+    // Mark a task as completed and save the note of that task
     @PutMapping("/{id}/complete")
-    public ResponseEntity<TaskResponseDTO> completeTask(@PathVariable Long id) {
-        return ResponseEntity.ok(taskService.completeTask(id));
+    public ResponseEntity<TaskResponseDTO> completeTask(@PathVariable Long id, @RequestBody CompleteTaskNoteAdd taskNoteRequest) {
+        return ResponseEntity.ok(taskService.completeTask(id, taskNoteRequest));
     }
 
     // Delete a task permanently by ID
