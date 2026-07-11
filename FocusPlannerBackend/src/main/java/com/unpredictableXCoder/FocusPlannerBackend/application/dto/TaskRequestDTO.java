@@ -1,7 +1,7 @@
-package com.unpredictableXCoder.FocusPlannerBackend.dto;
+package com.unpredictableXCoder.FocusPlannerBackend.application.dto;
 
-import com.unpredictableXCoder.FocusPlannerBackend.enums.ForWhen;
-import com.unpredictableXCoder.FocusPlannerBackend.enums.Priority;
+import com.unpredictableXCoder.FocusPlannerBackend.application.enums.ForWhen;
+import com.unpredictableXCoder.FocusPlannerBackend.application.enums.Priority;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;

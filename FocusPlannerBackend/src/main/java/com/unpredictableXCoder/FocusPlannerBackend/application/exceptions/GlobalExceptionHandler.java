@@ -1,7 +1,7 @@
-package com.unpredictableXCoder.FocusPlannerBackend.exceptions;
+package com.unpredictableXCoder.FocusPlannerBackend.application.exceptions;
 
 
-import com.unpredictableXCoder.FocusPlannerBackend.dto.ApiErrorResponse;
+import com.unpredictableXCoder.FocusPlannerBackend.application.dto.ApiErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;

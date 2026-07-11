@@ -1,9 +1,9 @@
-package com.unpredictableXCoder.FocusPlannerBackend.service;
+package com.unpredictableXCoder.FocusPlannerBackend.application.service;
 
-import com.unpredictableXCoder.FocusPlannerBackend.dto.CompleteTaskNoteAdd;
-import com.unpredictableXCoder.FocusPlannerBackend.dto.TaskRequestDTO;
-import com.unpredictableXCoder.FocusPlannerBackend.dto.TaskResponseDTO;
-import com.unpredictableXCoder.FocusPlannerBackend.enums.ForWhen;
+import com.unpredictableXCoder.FocusPlannerBackend.application.dto.CompleteTaskNoteAdd;
+import com.unpredictableXCoder.FocusPlannerBackend.application.dto.TaskRequestDTO;
+import com.unpredictableXCoder.FocusPlannerBackend.application.dto.TaskResponseDTO;
+import com.unpredictableXCoder.FocusPlannerBackend.application.enums.ForWhen;
 
 import java.util.List;
 

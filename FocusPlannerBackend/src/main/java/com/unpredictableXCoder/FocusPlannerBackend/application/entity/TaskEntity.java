@@ -1,8 +1,8 @@
-package com.unpredictableXCoder.FocusPlannerBackend.entity;
+package com.unpredictableXCoder.FocusPlannerBackend.application.entity;
 
-import com.unpredictableXCoder.FocusPlannerBackend.enums.ForWhen;
-import com.unpredictableXCoder.FocusPlannerBackend.enums.Priority;
-import com.unpredictableXCoder.FocusPlannerBackend.enums.Status;
+import com.unpredictableXCoder.FocusPlannerBackend.application.enums.ForWhen;
+import com.unpredictableXCoder.FocusPlannerBackend.application.enums.Priority;
+import com.unpredictableXCoder.FocusPlannerBackend.application.enums.Status;
 import jakarta.persistence.*;
 import lombok.*;
 

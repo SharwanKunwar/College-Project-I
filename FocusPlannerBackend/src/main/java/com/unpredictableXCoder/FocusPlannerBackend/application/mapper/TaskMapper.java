@@ -1,11 +1,9 @@
-package com.unpredictableXCoder.FocusPlannerBackend.mapper;
+package com.unpredictableXCoder.FocusPlannerBackend.application.mapper;
 
-import com.unpredictableXCoder.FocusPlannerBackend.dto.TaskRequestDTO;
-import com.unpredictableXCoder.FocusPlannerBackend.dto.TaskResponseDTO;
-import com.unpredictableXCoder.FocusPlannerBackend.entity.TaskEntity;
+import com.unpredictableXCoder.FocusPlannerBackend.application.dto.TaskRequestDTO;
+import com.unpredictableXCoder.FocusPlannerBackend.application.dto.TaskResponseDTO;
+import com.unpredictableXCoder.FocusPlannerBackend.application.entity.TaskEntity;
 import org.springframework.stereotype.Component;
-
-import java.time.LocalDateTime;
 
 @Component
 public class TaskMapper

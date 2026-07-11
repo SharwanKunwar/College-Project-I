@@ -1,4 +1,4 @@
-package com.unpredictableXCoder.FocusPlannerBackend.dto;
+package com.unpredictableXCoder.FocusPlannerBackend.application.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
