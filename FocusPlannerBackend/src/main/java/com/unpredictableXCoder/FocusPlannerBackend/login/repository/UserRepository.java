@@ -1,4 +1,14 @@
 package com.unpredictableXCoder.FocusPlannerBackend.login.repository;
 
-public interface UserRepository {
+import com.unpredictableXCoder.FocusPlannerBackend.login.entities.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+import java.util.UUID;
+
+public interface UserRepository extends JpaRepository<User, UUID>
+{
+    Optional<User> findByEmail(String email);
+    boolean existsByEmail(String email);
+
 }
