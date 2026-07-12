@@ -32,6 +32,15 @@ public class UserServiceIMP implements UserServiceHelper {
     }
 
     @Override
+    public Iterable<UserDTO> getAllUsers()
+    {
+        return userRepository.findAll()
+                .stream()
+                .map(user -> modelMapper.map(user, UserDTO.class))
+                .toList();
+    }
+
+    @Override
     public UserDTO getUserByEmail(String email) {
         return null;
     }
@@ -51,8 +60,5 @@ public class UserServiceIMP implements UserServiceHelper {
         return null;
     }
 
-    @Override
-    public Iterable<UserDTO> getAllUsers() {
-        return null;
-    }
+
 }
