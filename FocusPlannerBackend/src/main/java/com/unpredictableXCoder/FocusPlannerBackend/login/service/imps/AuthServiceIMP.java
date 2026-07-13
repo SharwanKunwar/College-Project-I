@@ -9,14 +9,15 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class AuthServiceIMP implements AuthServiceHelper {
+
     private final UserServiceHelper userServiceHelper;
-    private final PasswordEncoder passwordEncoder;
+//    private final PasswordEncoder passwordEncoder;
 
     @Override
     public UserDTO registerUser(UserDTO userDTO)
     {
         //logic : verify email, password, and default role
-        userDTO.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+//        userDTO.setPassword(passwordEncoder.encode(userDTO.getPassword()));
         UserDTO userDTO1 = userServiceHelper.createUser(userDTO);
         return userDTO1;
     }
