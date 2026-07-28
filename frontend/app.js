@@ -126,8 +126,22 @@ function handleLogout() {
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────
+function toggleSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  if (window.innerWidth <= 640) {
+    sidebar.classList.toggle('mobile-open');
+  } else {
+    sidebar.classList.toggle('collapsed');
+  }
+}
+
 function showView(view) {
   currentView = view;
+  
+  // Close sidebar on mobile after clicking a link
+  if (window.innerWidth <= 640) {
+    document.querySelector('.sidebar').classList.remove('mobile-open');
+  }
 
   // Update nav
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));

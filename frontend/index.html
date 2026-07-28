@@ -188,8 +188,17 @@
             <!-- Header -->
             <header class="content-header">
                 <div class="header-left">
-                    <h1 id="view-title">Dashboard</h1>
-                    <p id="view-subtitle" class="subtitle">Here's your focus overview for today</p>
+                    <button class="icon-btn sidebar-toggle-btn" onclick="toggleSidebar()" aria-label="Toggle Sidebar">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="3" y1="12" x2="21" y2="12" />
+                            <line x1="3" y1="6" x2="21" y2="6" />
+                            <line x1="3" y1="18" x2="21" y2="18" />
+                        </svg>
+                    </button>
+                    <div>
+                        <h1 id="view-title">Dashboard</h1>
+                        <p id="view-subtitle" class="subtitle">Here's your focus overview for today</p>
+                    </div>
                 </div>
                 <div class="header-right">
                     <button class="btn-primary" onclick="openTaskModal()">
