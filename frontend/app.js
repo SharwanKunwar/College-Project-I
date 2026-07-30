@@ -11,6 +11,9 @@ let currentUser = JSON.parse(localStorage.getItem('fp_user') || 'null');
 let currentView = 'dashboard';
 let editingTaskId = null;
 let completingTaskId = null;
+let startingTaskId = null;
+let focusTimerInterval = null;
+let focusSeconds = 0;
 let allTasks = [];
 
 // ── Init ─────────────────────────────────────────────────────────────────
@@ -266,15 +269,20 @@ function renderTaskCard(task, mini) {
 }
 
 function buildActions(task, mini) {
-  if (mini) return `
-    <button class="icon-btn info" onclick="startTask(${task.id})" title="Start" ${task.status !== 'PENDING' ? 'disabled style="opacity:0.3"' : ''}>▶</button>`;
+  if (mini) {
+    const isPlayable = task.status === 'PENDING' || task.status === 'IN_PROGRESS';
+    return `<button class="icon-btn info" onclick="openStartModal(${task.id})" title="Active Task" ${!isPlayable ? 'disabled style="opacity:0.3"' : ''}>▶</button>`;
+  }
 
   let html = '';
   if (task.status === 'PENDING') {
-    html += `<button class="icon-btn info" onclick="startTask(${task.id})" title="Start task">▶</button>`;
+    html += `<button class="icon-btn info" onclick="openStartModal(${task.id})" title="Start task">▶</button>`;
   }
   if (task.status === 'IN_PROGRESS') {
-    html += `<button class="icon-btn success" onclick="openCompleteModal(${task.id})" title="Complete task">✓</button>`;
+    html += `<button class="icon-btn success" onclick="openStartModal(${task.id})" title="Active task">✓</button>`;
+  }
+  if (task.status === 'COMPLETED') {
+    html += `<button class="icon-btn info" onclick="openNoteModal(${task.id})" title="View note">📄</button>`;
   }
   if (task.status !== 'COMPLETED') {
     html += `<button class="icon-btn" onclick="openEditModal(${task.id})" title="Edit task">✎</button>`;
@@ -389,10 +397,61 @@ async function deleteExistingAndRecreate(id, payload) {
 
 function openEditModal(taskId) { openTaskModal(taskId); }
 
-async function startTask(id) {
+// ── Active Task (Focus) modal ─────────────────────────────────────────────
+function formatTime(seconds) {
+  const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+  const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+  const s = (seconds % 60).toString().padStart(2, '0');
+  return `${h}:${m}:${s}`;
+}
+
+async function openStartModal(taskId) {
+  startingTaskId = taskId;
+  const task = allTasks.find(t => t.id === taskId);
+  if (!task) return;
+  
+  document.getElementById('active-task-title').textContent = task.title;
+  document.getElementById('active-task-desc').textContent = task.description;
+  document.getElementById('active-task-note').value = '';
+  document.getElementById('active-task-timer').textContent = '00:00:00';
+  document.getElementById('start-modal').classList.remove('hidden');
+
+  if (task.status === 'PENDING') {
+    try {
+      await apiPatch(`/api/tasks/${taskId}/start`);
+      task.status = 'IN_PROGRESS';
+      toast('Task started 🔥', 'info');
+      refreshCurrentView();
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  }
+
+  focusSeconds = 0;
+  clearInterval(focusTimerInterval);
+  focusTimerInterval = setInterval(() => {
+    focusSeconds++;
+    document.getElementById('active-task-timer').textContent = formatTime(focusSeconds);
+  }, 1000);
+}
+
+function closeStartModal() {
+  document.getElementById('start-modal').classList.add('hidden');
+  clearInterval(focusTimerInterval);
+  startingTaskId = null;
+}
+
+function closeStartModalOnOverlay(e) {
+  if (e.target.id === 'start-modal') closeStartModal();
+}
+
+async function submitFinishTask() {
+  if (!startingTaskId) return;
+  const note = document.getElementById('active-task-note').value.trim();
   try {
-    await apiPatch(`/api/tasks/${id}/start`);
-    toast('Task started 🔥', 'info');
+    await apiPatch(`/api/tasks/${startingTaskId}/finish`, { taskNote: note });
+    toast('Task completed! Great work ✅', 'success');
+    closeStartModal();
     refreshCurrentView();
   } catch (err) {
     toast(err.message, 'error');
@@ -410,33 +469,23 @@ async function deleteTask(id) {
   }
 }
 
-// ── Complete modal ────────────────────────────────────────────────────────
-function openCompleteModal(taskId) {
-  completingTaskId = taskId;
-  document.getElementById('task-note').value = '';
-  document.getElementById('complete-modal').classList.remove('hidden');
+// ── Note Modal ────────────────────────────────────────────────────────────
+function openNoteModal(taskId) {
+  const task = allTasks.find(t => t.id === taskId);
+  if (!task) return;
+  
+  const note = task.taskNote || task.note || "No note was added for this task.";
+  document.getElementById('view-note-content').textContent = note;
+  
+  document.getElementById('note-modal').classList.remove('hidden');
 }
 
-function closeCompleteModal() {
-  document.getElementById('complete-modal').classList.add('hidden');
-  completingTaskId = null;
+function closeNoteModal() {
+  document.getElementById('note-modal').classList.add('hidden');
 }
 
-function closeCompleteModalOnOverlay(e) {
-  if (e.target.id === 'complete-modal') closeCompleteModal();
-}
-
-async function submitComplete() {
-  if (!completingTaskId) return;
-  const note = document.getElementById('task-note').value.trim();
-  try {
-    await apiPatch(`/api/tasks/${completingTaskId}/finish`, { taskNote: note });
-    toast('Task completed! Great work ✅', 'success');
-    closeCompleteModal();
-    refreshCurrentView();
-  } catch (err) {
-    toast(err.message, 'error');
-  }
+function closeNoteModalOnOverlay(e) {
+  if (e.target.id === 'note-modal') closeNoteModal();
 }
 
 // ── Refresh ───────────────────────────────────────────────────────────────
