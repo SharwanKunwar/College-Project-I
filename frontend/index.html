@@ -346,11 +346,10 @@
     </div>
 
     <!-- ─── START / ACTIVE TASK MODAL ─────────────────────────────────────── -->
-    <div id="start-modal" class="modal-overlay hidden" onclick="closeStartModalOnOverlay(event)">
+    <div id="start-modal" class="modal-overlay hidden">
         <div class="modal glass" role="dialog" aria-modal="true">
             <div class="modal-header">
                 <h2>Active Task 🔥</h2>
-                <button class="modal-close" onclick="closeStartModal()" aria-label="Close">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="active-task-info" style="margin-bottom: 1.5rem;">
@@ -368,7 +367,6 @@
                 </div>
                 
                 <div class="modal-footer" style="margin-top: 1rem;">
-                    <button class="btn-ghost" onclick="closeStartModal()">Hide Timer</button>
                     <button class="btn-primary" onclick="submitFinishTask()">
                         Finish Task ✅
                     </button>

@@ -253,15 +253,43 @@ function renderTaskCard(task, mini) {
   const fwMap     = { TODAY: 'Today', TOMORROW: 'Tomorrow', LATER: 'Later' };
   const actions   = buildActions(task, mini);
 
+  let createdStr = '';
+  if (task.createdAt) {
+    const d = new Date(task.createdAt);
+    if (!isNaN(d)) {
+      createdStr = `<span class="task-date" title="Created At">📅 Created: ${d.toLocaleDateString(undefined, { month: 'short', day: 'numeric'})} at ${d.toLocaleTimeString(undefined, {hour: '2-digit', minute:'2-digit'})}</span>`;
+    }
+  }
+
+  let durationStr = '';
+  if (task.status === 'COMPLETED' && task.startedAt && task.finishedAt) {
+    const s = new Date(task.startedAt);
+    const f = new Date(task.finishedAt);
+    if (!isNaN(s) && !isNaN(f)) {
+      let diff = Math.floor((f - s) / 1000);
+      if (diff < 0) diff = 0;
+      const h = Math.floor(diff / 3600);
+      const m = Math.floor((diff % 3600) / 60);
+      const sec = diff % 60;
+      let dText = '';
+      if (h > 0) dText += `${h}h `;
+      if (m > 0 || h > 0) dText += `${m}m `;
+      dText += `${sec}s`;
+      durationStr = `<span class="chip chip-duration" title="Duration">⏱ ${dText.trim()}</span>`;
+    }
+  }
+
   return `
   <div class="task-card status-${task.status}" id="task-${task.id}">
     <div class="task-main">
       <span class="task-title" title="${esc(task.title)}">${esc(task.title)}</span>
       <span class="task-desc" title="${esc(task.description)}">${esc(task.description)}</span>
+      ${createdStr ? `<div class="task-time-meta">${createdStr}</div>` : ''}
       <div class="task-meta">
         <span class="chip chip-priority-${task.priority}">${task.priority}</span>
         <span class="chip chip-status-${task.status}">${statusMap[task.status]}</span>
         <span class="chip chip-forwhen">${fwMap[task.forWhen]}</span>
+        ${durationStr}
       </div>
     </div>
     <div class="task-actions">${actions}</div>
@@ -439,10 +467,6 @@ function closeStartModal() {
   document.getElementById('start-modal').classList.add('hidden');
   clearInterval(focusTimerInterval);
   startingTaskId = null;
-}
-
-function closeStartModalOnOverlay(e) {
-  if (e.target.id === 'start-modal') closeStartModal();
 }
 
 async function submitFinishTask() {
