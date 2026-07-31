@@ -244,9 +244,9 @@
                     </div>
                     <div class="quick-section">
                         <div class="section-header">
-                            <h2>In Progress</h2>
+                            <h2>Completed Tasks</h2>
                         </div>
-                        <div id="dashboard-progress-list" class="task-list mini">
+                        <div id="dashboard-completed-list" class="task-list mini">
                             <div class="skeleton-list">
                                 <div class="skeleton"></div>
                                 <div class="skeleton"></div>
@@ -256,7 +256,7 @@
                 </div>
             </section>
 
-            <!-- Task List View (Today / Tomorrow / Later / All) -->
+            <!-- Task List View ( All) -->
             <section id="view-tasks" class="view hidden">
                 <!-- Filter bar -->
                 <div class="filter-bar glass">
@@ -354,18 +354,22 @@
             <div class="modal-body">
                 <div class="active-task-info" style="margin-bottom: 1.5rem;">
                     <h3 id="active-task-title" style="margin-bottom: 0.5rem; font-size: 1.2rem;">Task Title</h3>
-                    <p id="active-task-desc" style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.9rem;">Task Description</p>
+                    <p id="active-task-desc"
+                        style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.9rem;">Task Description
+                    </p>
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
                         <span class="chip chip-status-IN_PROGRESS">In Progress</span>
-                        <span class="chip chip-timer" id="active-task-timer" style="background: rgba(108,99,255,0.2); color: var(--purple-light); font-family: monospace; font-size: 1.1rem; padding: 0.3rem 0.8rem;">00:00:00</span>
+                        <span class="chip chip-timer" id="active-task-timer"
+                            style="background: rgba(108,99,255,0.2); color: var(--purple-light); font-family: monospace; font-size: 1.1rem; padding: 0.3rem 0.8rem;">00:00:00</span>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label for="active-task-note">Task Notes (Optional)</label>
-                    <textarea id="active-task-note" placeholder="Write any notes or learnings while you work..." rows="4"></textarea>
+                    <textarea id="active-task-note" placeholder="Write any notes or learnings while you work..."
+                        rows="4"></textarea>
                 </div>
-                
+
                 <div class="modal-footer" style="margin-top: 1rem;">
                     <button class="btn-primary" onclick="submitFinishTask()">
                         Finish Task ✅
@@ -384,7 +388,9 @@
             </div>
             <div class="modal-body">
                 <div class="form-group" style="margin-bottom: 0;">
-                    <div id="view-note-content" style="background: rgba(255,255,255,0.04); padding: 1rem; border-radius: 8px; border: 1px solid var(--glass-border); color: var(--text-primary); white-space: pre-wrap; line-height: 1.5; font-size: 0.95rem; min-height: 80px;"></div>
+                    <div id="view-note-content"
+                        style="background: rgba(255,255,255,0.04); padding: 1rem; border-radius: 8px; border: 1px solid var(--glass-border); color: var(--text-primary); white-space: pre-wrap; line-height: 1.5; font-size: 0.95rem; min-height: 80px;">
+                    </div>
                 </div>
                 <div class="modal-footer" style="margin-top: 1.5rem;">
                     <button class="btn-primary" onclick="closeNoteModal()">Close</button>
