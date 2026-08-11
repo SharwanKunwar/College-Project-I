@@ -283,7 +283,7 @@ function renderTaskCard(task, mini, excludeDesc = false) {
   }
 
   return `
-  <div class="task-card status-${task.status}" id="task-${task.id}">
+  <div class="task-card status-${task.status} priority-${task.priority}" id="task-${task.id}">
     <div class="task-main">
       <span class="task-title" title="${esc(task.title)}">${esc(task.title)}</span>
       ${!excludeDesc ? `<span class="task-desc" title="${esc(task.description)}">${esc(task.description)}</span>` : ''}
